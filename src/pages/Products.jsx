@@ -29,6 +29,8 @@ export default function Products({ navigate }) {
         supplierId: '', unitPrice: '', deliveryDays: '', reliabilityScore: ''
     });
 
+    const [uploadingImage, setUploadingImage] = useState(false);
+
     useEffect(() => {
         loadData();
     }, []);
@@ -239,6 +241,7 @@ export default function Products({ navigate }) {
                             <th>Stock</th>
                             <th>Threshold</th>
                             <th>Actions</th>
+                            <th>Image</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -263,6 +266,16 @@ export default function Products({ navigate }) {
                                                 <button onClick={() => handleDelete(p)}>Delete</button>
                                             </>
                                         )}
+                                    </td>
+                                    <td>
+                                        {p.image_path ? (
+                                            <img
+                                                src={api.getImageUrl(p.image_path)}
+                                                alt={p.name}
+                                                style={{ width: '40px', height: '40px', objectFit: 'contain' }}
+                                                onError={(e) => e.target.style.display = 'none'}
+                                            />
+                                        ) : '—'}
                                     </td>
                                 </tr>
                             );
@@ -369,6 +382,56 @@ export default function Products({ navigate }) {
                         )}
                         {canManageProducts() && (
                             <button onClick={openAddSupplierLink}>Add Supplier</button>
+                        )}
+                    </div>
+                    <div id="product-image-section">
+                        <h3>Product Image</h3>
+                        {uploadingImage ? (
+                            <p>Uploading...</p>
+                        ) : selectedProduct.image_path ? (
+                            <img
+                                src={api.getImageUrl(selectedProduct.image_path)}
+                                alt={selectedProduct.name}
+                                style={{ maxWidth: '200px', maxHeight: '200px', objectFit: 'contain' }}
+                            />
+                        ) : (
+                            <p>No image uploaded</p>
+                        )}
+                        {canManageProducts() && (
+                            <label style={{ cursor: 'pointer'}}>
+                                <span style={{
+                                    display: 'inline-block',
+                                    padding: '8px 16px',
+                                    background: '#3b82f6',
+                                    color: 'white',
+                                    borderRadius: '6px',
+                                    fontSize: '14px',
+                                }}>
+                                    Upload Image
+                                </span>
+                                <input
+                                    disabled = {uploadingImage}
+                                    type="file"
+                                    accept="image/jpeg,image/png,image/webp"
+                                    style={{ display: 'none'}}
+                                    onChange={async (e) => {
+                                        const file = e.target.files[0];
+                                        if (!file) return;
+                                        try {
+                                            setUploadingImage(true)
+                                            await new Promise(resolve => setTimeout(resolve, 0));
+                                            await api.uploadProductImage(selectedProduct.id, file);
+                                            await loadData(); // reload everything
+                                            const updated = await api.getProductById(selectedProduct.id);
+                                            setSelectedProduct(updated);
+                                        } catch (err) {
+                                            alert('Upload failed: ' + err);
+                                        } finally {
+                                            setUploadingImage(false)
+                                        }
+                                    }}
+                                />
+                            </label>
                         )}
                     </div>
 

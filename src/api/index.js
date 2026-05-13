@@ -246,3 +246,29 @@ export const updateSetting = (key, value) =>
         method: 'PUT',
         body: JSON.stringify({ value }),
     });
+
+// ─── Images ────────────────────────────────────────────
+export const uploadProductImage = async (productId, file) => {
+    const formData = new FormData();
+    formData.append('image', file);
+
+    const response = await fetch(`${BASE_URL}/products/${productId}/image`, {
+        method: 'POST',
+        headers: {
+            ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+        },
+        body: formData,
+    });
+
+    if (!response.ok) {
+        const err = await response.json().catch(() => ({ error: 'Upload failed' }));
+        throw err.error || 'Upload failed';
+    }
+
+    return response.json();
+};
+
+export const getImageUrl = (imagePath) => {
+    if (!imagePath) return null;
+    return `http://localhost:8080/${imagePath}`;
+};
